@@ -132,4 +132,6 @@ dmypy.json
 music/
 bible/
 weight/
+effectsound/
+record/
 *.mp3
