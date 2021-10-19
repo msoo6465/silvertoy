@@ -1,6 +1,8 @@
+import time
 from typing import KeysView
 import cv2
 import threading
+from datetime import datetime
 
 
 class video(threading.Thread):
@@ -24,24 +26,43 @@ class video(threading.Thread):
                     75: 'remote', 76: 'keyboard', 77: 'cell phone', 78: 'microwave', 79: 'oven',
                     80: 'toaster', 81: 'sink', 82: 'refrigerator', 84: 'book', 85: 'clock',
                     86: 'vase', 87: 'scissors', 88: 'teddy bear', 89: 'hair drier', 90: 'toothbrush'}
-        self.camera = cv2.VideoCapture(-1)
+        self.camera = cv2.VideoCapture(0)
         self.camera.set(3,640)
         self.camera.set(4,480)
-
-        w = round(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-        h = round(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = self.camera.get(cv2.CAP_PROP_FPS)
-
-        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-
-        delay = round(1000/fps)
-
-        record_video_file = 'record/'
 
         ret, self.image = self.camera.read()
         self.image_ok = 0
         self.record = 0
+        self.sync_index = 0
+        self.no_more_record = 0
 
+    def record_thread(self):
+        inter_index = self.sync_index
+        start_time = time.time()
+        while time.time() - start_time < 60:
+            t_s_time = time.time()
+            if self.sync_index == inter_index:
+                self.video_out.write(self.image)
+                inter_index += 1
+                print('main time : ', self.main_time)
+                print('thread time : ', time.time() - t_s_time)
+                print('='*50)
+        self.video_out.release()
+        self.no_more_record = 1
+        self.record = 0
+
+    def record_video(self):
+        w = round(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = round(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = self.camera.get(cv2.CAP_PROP_FPS) * 0.6
+
+        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+        now = datetime.now()
+        record_video_file = f'record\\{str(now.date()).replace("-", "_")}_{now.hour}_{now.minute}_record.avi'
+        self.video_out = cv2.VideoWriter(record_video_file, fourcc, fps, (w,h))
+        record_th = threading.Thread(target=self.record_thread)
+        record_th.daemon = True
+        record_th.start()
 
     def id_class_name(self, class_id, classes):
         for key, value in classes.items():
@@ -50,12 +71,13 @@ class video(threading.Thread):
 
     def run(self):
         task1 = threading.Thread(target=self.opencvdnn_thread)
+        task1.daemon = True
         task1.start()
         self.main()
-        cv2.detroyAllWindows()
+        cv2.destroyAllWindows()
 
     def opencvdnn_thread(self):
-        model = cv2.dnn.readNetFromTensorflow('weight/frozen_inference_graph.pb','weight/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
+        model = cv2.dnn.readNetFromTensorflow('weight\\frozen_inference_graph.pb','weight\\ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
 
         while True:
             if self.image_ok == 1:
@@ -69,26 +91,34 @@ class video(threading.Thread):
                     confidence = detection[2]
                     if confidence > 0.5:
                         class_id = detection[1]
-                        class_name = id_class_name(class_id, classNames)
-                        print(str(str(class_id) + ' ' + str(detection[2]) + class_name))
-                        if class_name == 'person':
+                        class_name = self.id_class_name(class_id, self.classNames)
+                        # print(str(str(class_id) + ' ' + str(detection[2]) + class_name))
+                        if class_name == 'person' and self.record == 0 and self.no_more_record == 0:
+                            self.record_video()
                             self.record = 1
 
 
     def main(self):
         try:
             while True:
+                m_s_time = time.time()
+                _, self.image = self.camera.read()
                 keValue = cv2.waitKey(1)
                 if keValue == ord('q') or keValue == ord('Q'):
                     break
-
-                image_ok = 0
-                _, image = self.camera.read()
+                if not _:
+                    break
+                if self.no_more_record == 1:
+                    break
+                self.main_time = time.time() - m_s_time
                 self.image_ok = 1
-                cv2.imshow('image',image)
+                self.sync_index += 1
+                cv2.imshow('image',self.image)
+
 
         except KeyboardInterrupt:
             pass
+
 if __name__ == "__main__":
     vi = video()
     vi.start()
