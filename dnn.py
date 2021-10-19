@@ -36,33 +36,17 @@ class video(threading.Thread):
         self.sync_index = 0
         self.no_more_record = 0
 
-    def record_thread(self):
-        inter_index = self.sync_index
-        start_time = time.time()
-        while time.time() - start_time < 60:
-            t_s_time = time.time()
-            if self.sync_index == inter_index:
-                self.video_out.write(self.image)
-                inter_index += 1
-                print('main time : ', self.main_time)
-                print('thread time : ', time.time() - t_s_time)
-                print('='*50)
-        self.video_out.release()
-        self.no_more_record = 1
-        self.record = 0
-
     def record_video(self):
         w = round(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = round(self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = self.camera.get(cv2.CAP_PROP_FPS) * 0.6
+        fps = self.camera.get(cv2.CAP_PROP_FPS)
 
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
         now = datetime.now()
-        record_video_file = f'record\\{str(now.date()).replace("-", "_")}_{now.hour}_{now.minute}_record.avi'
+        record_video_file = f'record/{str(now.date()).replace("-", "_")}_{now.hour}_{now.minute}_record.avi'
         self.video_out = cv2.VideoWriter(record_video_file, fourcc, fps, (w,h))
-        record_th = threading.Thread(target=self.record_thread)
-        record_th.daemon = True
-        record_th.start()
+        self.record_start_time = time.time()
+
 
     def id_class_name(self, class_id, classes):
         for key, value in classes.items():
@@ -77,7 +61,7 @@ class video(threading.Thread):
         cv2.destroyAllWindows()
 
     def opencvdnn_thread(self):
-        model = cv2.dnn.readNetFromTensorflow('weight\\frozen_inference_graph.pb','weight\\ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
+        model = cv2.dnn.readNetFromTensorflow('weight/frozen_inference_graph.pb','weight/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
 
         while True:
             if self.image_ok == 1:
@@ -110,6 +94,14 @@ class video(threading.Thread):
                     break
                 if self.no_more_record == 1:
                     break
+                if self.record == 1:
+                    # print('record start')
+                    self.video_out.write(self.image)
+                    if time.time() - self.record_start_time > 60:
+                        self.video_out.release()
+                        self.record = 0
+                        self.no_more_record = 1
+                        print('record out')
                 self.main_time = time.time() - m_s_time
                 self.image_ok = 1
                 self.sync_index += 1
