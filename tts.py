@@ -213,6 +213,10 @@ class Speaker():
                     self.play_news()
                     self.function_flag = 0
 
+                if '땅콩' in speech:
+                    self.speak('네')
+                    self.wait_start_time = time.time()
+                    self.function_flag = 0
             else:
                 if '땅콩' in speech:
                     self.speak('네')
