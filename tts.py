@@ -1,14 +1,14 @@
 #-*-coding: utf-8-*-
 #-*-coding: euc-kr-*-
-import time
 
 import speech_recognition as sr
 from gtts import gTTS
+import playsound
 import os
+import time
 import pygame
 import random 
 from datetime import datetime
-from dnn import video
 
 def speak(text):
     tts = gTTS(text=text, lang='ko')
@@ -38,14 +38,14 @@ def play_audio(filename):
         continue
 
 def play_misuc(music_dir):
-    music_list = [os.path.join(music_dir, i) for i in os.listdir(music_dir)]
+    music_list = os.listdir(music_dir)
     music_title = music_list[random.randint(0,len(music_list)-1)]
     part, section = music_title.split('_')[:2]
     speak(f'{part}에 {section} 들려드릴께요.')
     play_audio(os.path.join('music',music_title))
 
 def play_bible(bible_dir):
-    bible_list = [os.path.join(bible_dir, i) for i in os.listdir(bible_dir)]
+    bible_list = os.listdir(bible_dir)
     bible_title = bible_list[random.randint(0, len(bible_list)-1)]
     part, section = bible_title.split('_')[:2]
     speak(f'오늘은 {part} {section} 읽어드릴께요')
@@ -65,16 +65,15 @@ def check_call():
 
 
 r = sr.Recognizer()
-mic = sr.Microphone(device_index=0)
+mic = sr.Microphone(device_index=None)
 flag = 0
-aa = '1'
 
 call_time = {
     'wake_time' : '',
     'drug_time' : '',
     'once_time' : '',
     'time_count' : 3,
-    'camera_time' : [11, 15, 29]
+    'camera_time' : [11, 15, 19]
 }
 
 while True:
@@ -89,6 +88,9 @@ while True:
 
     speech = speech.replace(' ','')
     if flag == 1:
+        if time.time() - wait_start_time > 30:
+            flag = 0
+
         if '성경' in speech:
             play_bible('bible')
             flag = 0
@@ -138,36 +140,65 @@ while True:
                             h = int(speech_time[:i])
                     speak(f'매일 아침 {h}시에 깨워드릴께요.')
                     call_time['wake_time'] = h
+                flag = 0
 
             elif '약' in speech_call.replace(' ',''):
-                speak('네! 약먹는 시간을 등록할께요. 몇 시로 등록할까요?')
-                with mic as source:
-                    print('약')
-                    audio = r.listen(source, timeout=5, phrase_time_limit=5)
-                    speech_time = r.recognize_google(audio, language='ko-KR')
-                    print(speech_time)
-                for i, c in enumerate(speech_time):
-                    if c == '시':
-                        h = int(speech_time[:i])
-                call_time['drug_time'] = h
-                speak(f'매일 {h}시에 약먹는 시간 알려드릴께요.')
+                if call_time['drug_time'] != '':
+                    speak('네! 약먹는 시간을 변경할께요. 몇 시로 변경할까요?')
+                    with mic as source:
+                        print('약')
+                        audio = r.listen(source, timeout=5, phrase_time_limit=5)
+                        speech_time = r.recognize_google(audio, language='ko-KR')
+                        print(speech_time)
+                    for i, c in enumerate(speech_time):
+                        if c == '시':
+                            h = int(speech_time[:i])
+                    call_time['drug_time'] = h
+                    speak(f'매일 {h}시로 시간을 변경했어요.')
+
+                else:
+                    speak('네! 약먹는 시간을 등록할께요. 몇 시로 등록할까요?')
+                    with mic as source:
+                        print('약')
+                        audio = r.listen(source, timeout=5, phrase_time_limit=5)
+                        speech_time = r.recognize_google(audio, language='ko-KR')
+                        print(speech_time)
+                    for i, c in enumerate(speech_time):
+                        if c == '시':
+                            h = int(speech_time[:i])
+                    call_time['drug_time'] = h
+                    speak(f'매일 {h}시에 약먹는 시간 알려드릴께요.')
 
             elif '일회용' in speech_call.replace(' ',''):
-                speak('네! 일회용 알람을 등록할께요. 몇 시로 등록할까요?')
-                with mic as source:
-                    print('약')
-                    audio = r.listen(source, timeout=5, phrase_time_limit=5)
-                    speech_time = r.recognize_google(audio, language='ko-KR')
-                    print(speech_time)
-                for i, c in enumerate(speech_time):
-                    if c == '시':
-                        h = int(speech_time[:i])
-                call_time['once_time'] = h
-                speak(f'{h}시 10분 전에 알려드릴께요.')
+                if call_time['once_time'] != '':
+                    speak('네! 일회용 알람을 등록할께요. 몇 시로 등록할까요?')
+                    with mic as source:
+                        print('약')
+                        audio = r.listen(source, timeout=5, phrase_time_limit=5)
+                        speech_time = r.recognize_google(audio, language='ko-KR')
+                        print(speech_time)
+                    for i, c in enumerate(speech_time):
+                        if c == '시':
+                            h = int(speech_time[:i])
+                    call_time['once_time'] = h
+                    speak(f'{h}시 10분 전에 알려드릴께요.')
+                else:
+                    speak('네! 일회용 알람을 등록할께요. 몇 시로 등록할까요?')
+                    with mic as source:
+                        print('약')
+                        audio = r.listen(source, timeout=5, phrase_time_limit=5)
+                        speech_time = r.recognize_google(audio, language='ko-KR')
+                        print(speech_time)
+                    for i, c in enumerate(speech_time):
+                        if c == '시':
+                            h = int(speech_time[:i])
+                    call_time['once_time'] = h
+                    speak(f'{h}시 10분 전에 알려드릴께요.')
     else:
         if '땅콩' in speech:
             speak('네')
             flag = 1
+            wait_start_time = time.time()
 
     now = datetime.now()
     if now.minute == 0:
