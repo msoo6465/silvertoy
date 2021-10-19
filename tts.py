@@ -4,7 +4,6 @@ import threading
 
 import speech_recognition as sr
 from gtts import gTTS
-import playsound
 import os
 import time
 import pygame
@@ -13,6 +12,7 @@ from datetime import datetime
 from dnn import video
 from set_log import logger
 from button_check import button
+from get_info_web import get_news, get_weather
 
 class Speaker():
     def __init__(self):
@@ -96,11 +96,23 @@ class Speaker():
             self.call_time['wake_time'] = h
             self.function_flag = 0
 
-    def check_alam(self, force):
+    def play_climate(self):
+        weather = get_weather('대구')
+        self.speak('대구 날씨 알려드릴께요.')
+        self.speak(f'오늘 대구 날씨는 {weather["온도"]}도, 강수확률은 {weather["강수확률"]}프로이며, 습도는 {weather["습도"]} 입니다. ')
+
+    def play_news(self):
+        news = get_news()
+        self.speak('오늘의 해드라인 뉴스 3개 알려드릴께요.')
+        for key, new in news.items():
+            self.speak(new)
+        self.speak('입니다.')
+
+    def check_alam(self):
         while True:
             now = datetime.now()
-            if now.minute == 0 or force:
-                if str(now.hour) == self.call_time['wake_time'] or force:
+            if now.minute == 0:
+                if str(now.hour) == self.call_time['wake_time']:
                     alam_start_time = time.time()
                     check_clicked = button(5,19)
                     check_clicked.start()
@@ -149,7 +161,7 @@ class Speaker():
             return speech
 
     def main(self):
-        check_alam = threading.Thread(target=self.check_alam, args=(True,))
+        check_alam = threading.Thread(target=self.check_alam)
         check_alam.start()
         while True:
             speech = self.get_text()
@@ -187,7 +199,9 @@ class Speaker():
 
                     elif '일회용' in speech_call.replace(' ',''):
                         self.alam('once_time')
-                        
+
+                if '날씨' in speech:
+                    self.play_climate()
             else:
                 if '땅콩' in speech:
                     self.speak('네')
