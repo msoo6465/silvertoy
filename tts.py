@@ -199,9 +199,16 @@ class Speaker():
 
                     elif '일회용' in speech_call.replace(' ',''):
                         self.alam('once_time')
+                    self.function_flag = 0
 
                 if '날씨' in speech:
                     self.play_climate()
+                    self.function_flag = 0
+
+                if '뉴스' in speech:
+                    self.play_news()
+                    self.function_flag = 0
+
             else:
                 if '땅콩' in speech:
                     self.speak('네')
