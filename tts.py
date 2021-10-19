@@ -105,7 +105,7 @@ class Speaker():
                     check_clicked = button(5,19)
                     check_clicked.start()
                     while True:
-                        self.play_audio('effectsound/30. 액션.mp3')
+                        self.play_audio('effectsound/30.액션.mp3')
                         if check_clicked.get_press() == 1:
                             check_clicked.reset()
                             check_clicked.close()
@@ -121,7 +121,7 @@ class Speaker():
                     # 약먹는 시간 알림
                     alam_start_time = time.time()
                     while True:
-                        self.play_audio('effectsound\\30. 액션.mp3')
+                        self.play_audio('effectsound\\30.액션.mp3')
                         self.speak('약 먹을 시간이에요. 약드세요')
                         if time.time() - alam_start_time > 60:
                             break
@@ -133,7 +133,7 @@ class Speaker():
                 if str(now.hour) == str(eval(f"{self.call_time['wake_time']}-1")):
                     alam_start_time = time.time()
                     while True:
-                        self.play_audio('effectsound\\30. 액션.mp3')
+                        self.play_audio('effectsound\\30.액션.mp3')
                         self.speak('등록된 일회용 알람 10분전입니다. 준비하세요!')
                         if time.time() - alam_start_time > 60:
                             break
@@ -149,7 +149,7 @@ class Speaker():
             return speech
 
     def main(self):
-        check_alam = threading.Thread(self.check_alam, args=(True,))
+        check_alam = threading.Thread(target=self.check_alam, args=(True,))
         check_alam.start()
         while True:
             speech = self.get_text()
