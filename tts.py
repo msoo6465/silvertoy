@@ -97,15 +97,19 @@ class Speaker():
             self.function_flag = 0
 
     def play_climate(self):
-        weather = get_weather('대구')
+        weather = get_weather()
         self.speak('대구 날씨 알려드릴께요.')
         self.speak(f'오늘 대구 날씨는 {weather["온도"]}도이며 {weather["상태"]}입니다. 미세먼지는 {weather["미세먼지"]}이며, 습도는 {weather["습도"]}입니다.')
 
     def play_news(self):
+        i = 0
         news = get_news()
         self.speak('오늘의 해드라인 뉴스 3개 알려드릴께요.')
         for key, new in news.items():
             self.speak(new)
+            i += 1
+            if i == 3:
+                break
         self.speak('입니다.')
 
     def check_alam(self):
