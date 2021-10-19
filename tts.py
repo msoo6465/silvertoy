@@ -1,5 +1,6 @@
 #-*-coding: utf-8-*-
 #-*-coding: euc-kr-*-
+import threading
 
 import speech_recognition as sr
 from gtts import gTTS
@@ -10,12 +11,12 @@ import pygame
 import random 
 from datetime import datetime
 from dnn import video
-from set_log import mylogger
+from set_log import logger
 from button_check import button
 
-class speaker():
+class Speaker():
     def __init__(self):
-        mylogger.info('Speaker Start')
+        logger.info('Speaker Start')
         self.r = sr.Recognizer()
         self.mic = sr.Microphone(device_index=None)
         self.function_flag = 0
@@ -106,6 +107,8 @@ class speaker():
                     while True:
                         self.play_audio('effectsound/30. 액션.mp3')
                         if check_clicked.get_press() == 1:
+                            check_clicked.reset()
+                            check_clicked.close()
                             break
                         else:
                             self.speak('일어나세요. 기상시간입니다. 종료하시려면 버튼을 눌러주세요.')
@@ -146,6 +149,8 @@ class speaker():
             return speech
 
     def main(self):
+        check_alam = threading.Thread(self.check_alam, args=(True,))
+        check_alam.start()
         while True:
             speech = self.get_text()
             if not speech:
@@ -189,35 +194,7 @@ class speaker():
                     self.wait_start_time = time.time()
                     self.function_flag = 1
 
-            now = datetime.now()
-            if now.minute == 0:
-                if str(now.hour) == self.call_time['wake_time']:
-                    alam_start_time = time.time()
-                    while True:
-                        self.play_audio('effectsound\\30. 액션.mp3')
-                        self.speak('일어나세요. 기상시간입니다.')
-                        if time.time() - alam_start_time > 60:
-                            break
-                    # 기상시간 알람
-                    # 알람 끄는 것 까지
-                    pass
-                elif str(now.hour) == self.call_time['drug_time']:
-                    # 약먹는 시간 알림
-                    alam_start_time = time.time()
-                    while True:
-                        self.play_audio('effectsound\\30. 액션.mp3')
-                        self.speak('약 먹을 시간이에요. 약드세요')
-                        if time.time() - alam_start_time > 60:
-                            break
-                elif now.hour in self.call_time['camera_time']:
-                    vi = video()
-                    vi.start()
 
-            elif now.minute == 50:
-                if str(now.hour) == str(eval(f"{self.call_time['wake_time']}-1")):
-                    alam_start_time = time.time()
-                    while True:
-                        self.play_audio('effectsound\\30. 액션.mp3')
-                        self.speak('등록된 일회용 알람 10분전입니다. 준비하세요!')
-                        if time.time() - alam_start_time > 60:
-                            break
+if __name__ == '__main__':
+    speaker = Speaker()
+    speaker.main()
