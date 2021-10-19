@@ -9,6 +9,7 @@ import time
 import pygame
 import random 
 from datetime import datetime
+from dnn import video
 
 def speak(text):
     tts = gTTS(text=text, lang='ko')
