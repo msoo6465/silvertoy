@@ -169,6 +169,7 @@ class Speaker():
         check_alam.start()
         while True:
             speech = self.get_text()
+            logger.info(f'speech : {speech}')
             if not speech:
                 continue
             speech = speech.replace(' ','')
@@ -177,23 +178,28 @@ class Speaker():
                     self.function_flag = 0
 
                 if '성경' in speech:
+                    logger.info('play bible')
                     self.play_bible('bible')
                     self.function_flag = 0
 
                 elif '노래' in speech:
+                    logger.info('play music')
                     self.play_misuc('music')
                     self.function_flag = 0
                     pass
 
                 elif '성대모사' in speech:
+                    logger.info('play same')
                     self.play_same()
                     self.function_flag = 0
                     pass
 
                 if '알람' in speech:
+                    logger.info('alam')
                     self.speak('기상시간, 약 먹는 시간, 일회용 알람을 설정할 수 있어요. 무슨 알람을 설정하실거에요? 띠링 소리 이후에 말씀해주세요.')
                     self.play_audio('effectsound/2. 띠딩2.mp3')
                     speech_call = self.get_text()
+                    logger.info(f'speech_call : {speech_call}')
 
                     if '기상' in speech_call.replace(' ',''):
                         self.alam('wake_time')
@@ -206,22 +212,19 @@ class Speaker():
                     self.function_flag = 0
 
                 if '날씨' in speech:
+                    logger.info('play weather')
                     self.play_climate()
                     self.function_flag = 0
 
                 if '뉴스' in speech:
+                    logger.info('play news')
                     self.play_news()
                     self.function_flag = 0
 
-                if '땅콩' in speech:
-                    self.speak('네')
-                    self.wait_start_time = time.time()
-                    self.function_flag = 0
-            else:
-                if '땅콩' in speech:
-                    self.speak('네')
-                    self.wait_start_time = time.time()
-                    self.function_flag = 1
+            if '땅콩' in speech:
+                self.speak('네')
+                self.wait_start_time = time.time()
+                self.function_flag = 1
 
 
 if __name__ == '__main__':
