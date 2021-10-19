@@ -209,6 +209,7 @@ class Speaker():
 
                     elif '일회용' in speech_call.replace(' ',''):
                         self.alam('once_time')
+                    self.speak('잘 못들었어요. 다음에 해주세요.')
                     self.function_flag = 0
 
                 if '날씨' in speech:
