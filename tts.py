@@ -28,6 +28,16 @@ class Speaker():
             'time_count': 3,
             'camera_time': [11, 15, 19]
         }
+        self.start_speak_list = ['저는 땅콩입니다. 저에게 명령하실 때는 땅콩이라고 불러주신 후 말씀해주세요.',
+                                 '안녕하세요 땅콩이에요.',
+                                 '쨔쟌!!! 땅콩이가 돌아왔어요~',
+                                 '저를 다시 깨워주셔서 감사해요',
+                                 '땅콩이 등장!',
+                                 '저는 어르신의 반려 로봇 땅콩이에요.',
+                                 '다시 만나서 반가워요!',
+                                 '그동안 저 보고싶으셨죠?',
+                                 '저 없는동안 뭐하고 계셨어요?',
+                                 '푹 자서 너무 개운해요! 저를 움직이게 해주세요.']
 
     def speak(self,text):
         tts = gTTS(text=text, lang='ko')
@@ -165,6 +175,7 @@ class Speaker():
             return speech
 
     def main(self):
+        self.speak(self.start_speak_list[random.randint(0,len(self.start_speak_list))])
         check_alam = threading.Thread(target=self.check_alam)
         check_alam.start()
         while True:
