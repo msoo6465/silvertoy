@@ -57,8 +57,8 @@ class video(threading.Thread):
     def run(self):
         task1 = threading.Thread(target=self.opencvdnn_thread)
         task1.daemon = True
-        self.main()
         task1.start()
+        self.main()
         cv2.destroyAllWindows()
 
     def opencvdnn_thread(self):
