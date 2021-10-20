@@ -9,7 +9,7 @@ import time
 import pygame
 import random 
 from datetime import datetime
-from dnn import video
+from check_inside import video
 from set_log import logger
 from button_check import button
 from get_info_web import get_news, get_weather
@@ -182,9 +182,9 @@ class Speaker():
         check_alam.start()
         while True:
             speech = self.get_text()
-            logger.info(f'speech : {speech}')
             if not speech:
                 continue
+            logger.info(f'speech : {speech}')
             speech = speech.replace(' ','')
             if self.function_flag == 1:
                 if time.time() - self.wait_start_time > 30:
