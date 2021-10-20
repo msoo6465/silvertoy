@@ -4,7 +4,7 @@ from move_util import motor_control as mc
 import time
 import cv2
 
-class move(threading.Thread):
+class move_function(threading.Thread):
     def __init__(self, is_follow):
         threading.Thread.__init__(self)
         self.is_follow = is_follow
