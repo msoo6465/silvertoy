@@ -84,27 +84,29 @@ class Speaker():
         self.speak(speech_sub)
 
     def alam(self, type):
+        if type == 'wake_time':
+            type_text = '기상'
+        elif type == 'drug_time':
+            type_text = '약먹을 '
+        elif type == 'once_time':
+            type_text = '일회용 알람'
+
         if self.call_time[type] != '':
-            if type == 'wake_time':
-                type_text = '기상'
-            elif type == 'drug_time':
-                type_text = '약먹을 '
-            elif type == 'once_time':
-                type_text = '일회용 알람'
+            is_change = '변경'
+        else:
+            is_change = '등록'
 
-            if self.call_time[type] != '':
-                is_change = '변경'
-            else:
-                is_change = '등록'
-
-            self.speak(f'네! {type_text}시간을 {is_change}할께요. 몇 시로 {is_change}할까요?')
-            speech_time = self.get_text()
-            for i, c in enumerate(speech_time):
-                if c == '시':
-                    h = int(speech_time[:i])
-            self.speak(f'매일 아침 {h}시로 변경했어요.')
-            self.call_time['wake_time'] = h
-            self.function_flag = 0
+        self.speak(f'네! {type_text}시간을 {is_change}할께요. 몇 시로 {is_change}할까요?')
+        speech_time = self.get_text()
+        for i, c in enumerate(speech_time):
+            if c == '시':
+                h = int(speech_time[:i])
+        if type == 'once_time':
+            self.speak(f'{h}시로 일회용 알람을 {is_change}했어요.')
+        else:
+            self.speak(f'매일 {h}시로 {type_text}시간을 {is_change}했어요.')
+        self.call_time[type] = h
+        self.function_flag = 0
 
     def play_climate(self):
         weather = get_weather()
@@ -221,8 +223,10 @@ class Speaker():
 
                     elif '일회용' in speech_call:
                         self.alam('once_time')
-                    self.speak('잘 못들었어요. 다음에 해주세요.')
-                    self.function_flag = 0
+
+                    else:
+                        self.speak('잘 못들었어요. 다음에 해주세요.')
+                        self.function_flag = 0
 
                 if '날씨' in speech:
                     logger.info('play weather')
