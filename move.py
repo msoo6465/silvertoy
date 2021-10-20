@@ -32,9 +32,8 @@ class move_function(threading.Thread):
                     self.end_move = 1
                     break
                 time.sleep(0.2)
-                if self.flag == 0:
-                    self.m_con.motor_go(self.go_speed)
-                    self.flag -= 1
+                self.m_con.motor_go(self.go_speed)
+
 
                 GPIO.output(self.trig, True)
                 time.sleep(0.00001)
@@ -81,6 +80,7 @@ class move_function(threading.Thread):
                 _, image = camera.read()
                 keValue = cv2.waitKey(1)
                 if time.time() - m_s_time > 300:
+                    self.end_move = 1
                     break
                 if keValue == ord('q') or keValue == ord('Q'):
                     break
@@ -98,13 +98,21 @@ class move_function(threading.Thread):
                         class_id = detection[1]
                         if class_id == 1:
                             box_x = detection[3] * image_width
+                            box_y = detection[4] * image_width
                             box_w = detection[5] * image_width
-                            if box_x + (box_w/2) > image_width * 0.9:
+                            box_h = detection[6] * image_width
+                            print(box_x + (box_w/2), image_width)
+                            if (box_x + box_w)/2 > (image_width/2) * 1.1:
+                                print('right')
                                 self.m_con.motor_left(self.speed)
-                            elif box_x + (box_w/2) < image_width * 0.9:
+                            elif (box_x + box_w)/2 < (image_width/2) * 0.9:
+                                print('left')
                                 self.m_con.motor_right(self.speed)
                             else:
+                                print('go')
                                 self.m_con.motor_go(self.go_speed)
+                            # cv2.rectangle(imagednn,(int(box_x),int(box_y)),(int(box_w),int(box_h)),(0,0,255),thickness=1)
+                            # cv2.imshow('person',imagednn)
                             time.sleep(0.2)
         except Exception as e:
             print(e)
@@ -116,7 +124,7 @@ class move_function(threading.Thread):
         return self.end_move
 
     def run(self):
-        if self.is_follow == 1:
+        if self.is_follow == 0:
             self.move_solo()
         else:
             self.move_follow()
