@@ -199,15 +199,16 @@ class Speaker():
                     self.speak('기상시간, 약 먹는 시간, 일회용 알람을 설정할 수 있어요. 무슨 알람을 설정하실거에요? 띠링 소리 이후에 말씀해주세요.')
                     self.play_audio('effectsound/2. 띠딩2.mp3')
                     speech_call = self.get_text()
+                    speech_call = speech_call.replace(' ', '')
                     logger.info(f'speech_call : {speech_call}')
 
-                    if '기상' in speech_call.replace(' ',''):
+                    if '기상' in speech_call:
                         self.alam('wake_time')
 
-                    elif '약' in speech_call.replace(' ',''):
+                    elif '약' in speech_call:
                         self.alam('drug_time')
 
-                    elif '일회용' in speech_call.replace(' ',''):
+                    elif '일회용' in speech_call:
                         self.alam('once_time')
                     self.speak('잘 못들었어요. 다음에 해주세요.')
                     self.function_flag = 0
