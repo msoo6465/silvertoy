@@ -33,7 +33,7 @@ def check_distance(trig,echo):
     
     return distance
 
-from util import motor_control
+from move_util import motor_control
 
 m_con = motor_control(18,22,27,23,25,24)
 flag = 0
