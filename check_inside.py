@@ -35,6 +35,7 @@ class video(threading.Thread):
         self.record = 0
         self.sync_index = 0
         self.no_more_record = 0
+        self.is_person = 0
 
     def record_video(self):
         w = round(self.camera.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -56,13 +57,12 @@ class video(threading.Thread):
     def run(self):
         task1 = threading.Thread(target=self.opencvdnn_thread)
         task1.daemon = True
-        task1.start()
         self.main()
+        task1.start()
         cv2.destroyAllWindows()
 
     def opencvdnn_thread(self):
         model = cv2.dnn.readNetFromTensorflow('weight/frozen_inference_graph.pb','weight/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
-
         while True:
             if self.image_ok == 1:
                 imagednn = self.image
@@ -76,11 +76,13 @@ class video(threading.Thread):
                     if confidence > 0.5:
                         class_id = detection[1]
                         class_name = self.id_class_name(class_id, self.classNames)
-                        # print(str(str(class_id) + ' ' + str(detection[2]) + class_name))
                         if class_name == 'person' and self.record == 0 and self.no_more_record == 0:
                             self.record_video()
                             self.record = 1
+                            self.is_person = 1
 
+    def get_is_person(self):
+        return self.is_person
 
     def main(self):
         try:
@@ -97,7 +99,7 @@ class video(threading.Thread):
                 if self.record == 1:
                     # print('record start')
                     self.video_out.write(self.image)
-                    if time.time() - self.record_start_time > 60:
+                    if time.time() - self.record_start_time > 120:
                         self.video_out.release()
                         self.record = 0
                         self.no_more_record = 1
