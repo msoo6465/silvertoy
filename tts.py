@@ -1,6 +1,7 @@
 #-*-coding: utf-8-*-
 #-*-coding: euc-kr-*-
 import threading
+from move import move_function
 
 import speech_recognition as sr
 from gtts import gTTS
@@ -148,9 +149,15 @@ class Speaker():
                 elif str(now.hour) == self.call_time['drug_time']:
                     # 약먹는 시간 알림
                     alam_start_time = time.time()
+                    check_clicked = button(5,19)
+                    check_clicked.start()
                     while True:
                         self.play_audio('effectsound\\30.액션.mp3')
                         self.speak('약 먹을 시간이에요. 약드세요')
+                        if check_clicked.get_press() == 1:
+                            check_clicked.reset()
+                            check_clicked.close()
+                            break
                         if time.time() - alam_start_time > 60:
                             break
                 elif now.hour in self.call_time['camera_time']:
@@ -160,10 +167,16 @@ class Speaker():
             elif now.minute == 50:
                 if str(now.hour) == str(eval(f"{self.call_time['wake_time']}-1")):
                     alam_start_time = time.time()
+                    check_clicked = button(5,19)
+                    check_clicked.start()
                     while True:
                         self.play_audio('effectsound\\30.액션.mp3')
                         self.speak('등록된 일회용 알람 10분전입니다. 준비하세요!')
                         if time.time() - alam_start_time > 60:
+                            break
+                        if check_clicked.get_press() == 1:
+                            check_clicked.reset()
+                            check_clicked.close()
                             break
             time.sleep(60)
 
@@ -227,6 +240,51 @@ class Speaker():
                     else:
                         self.speak('잘 못들었어요. 다음에 해주세요.')
                         self.function_flag = 0
+
+                if '혼자' in speech:
+                    logger.info('play alone move')
+                    self.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 5분간 움직일 수 있어요.')
+                    check_clicked = button(5,19)
+                    check_clicked.start()
+                    st = time.time()
+                    while time.time() - st < 30:
+                        button_state = check_clicked.get_press()
+                        if button_state == 1:
+                            logger.info('only move button clicked')
+                            check_clicked.reset()
+                            check_clicked.close()
+                            break
+                    if button_state == 1:
+                        self.speak('네 지금부터 혼자 움직일께요.')
+                        mv = move_function(0)
+                        mv.start()
+                    
+                    else:
+                        self.speak('다음에 이용해주세요.')
+                    self.function_flag = 0
+
+                if '따라와' in speech:
+                    logger.info('play follow function')
+                    self.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 5분간 따라 갈께요.')
+                    check_clicked = button(5,19)
+                    check_clicked.start()
+                    st = time.time()
+                    while time.time() - st < 30:
+                        button_state = check_clicked.get_press()
+                        if button_state == 1:
+                            logger.info('follow button clicked')
+                            check_clicked.reset()
+                            check_clicked.close()
+                            break
+                    if button_state == 1:
+                        self.speak('네 지금부터 따라 다닐께요.')
+                        mv = move_function(1)
+                        mv.start()
+                    
+                    else:
+                        self.speak('다음에 이용해주세요.')
+                    self.function_flag = 0
+                    
 
                 if '날씨' in speech:
                     logger.info('play weather')

@@ -13,8 +13,8 @@ class move_function(threading.Thread):
         self.speed = 100
         self.back_speed = 60
 
-        self.trig = 20
-        self.echo = 21
+        self.trig = 16
+        self.echo = 20
 
         self.end_move = 0
 
@@ -23,31 +23,38 @@ class move_function(threading.Thread):
         GPIO.setup(self.trig, GPIO.OUT)
         GPIO.setup(self.echo, GPIO.IN)
 
+    def get_distance(self):
+        GPIO.output(self.trig, True)
+        time.sleep(0.00001)
+        GPIO.output(self.trig, False)
+
+        while GPIO.input(self.echo) == 0:
+            pulse_start = time.time()
+
+        while GPIO.input(self.echo) == 1:
+            pulse_end = time.time()
+
+        pulse_duration = pulse_end - pulse_start
+        distance = pulse_duration * 17000
+        distance = round(distance, 2)
+        return distance
+
     def move_solo(self):
+        start_t = time.time()
         try:
             solo_start_time = time.time()
             GPIO.output(self.trig, False)
             while True:
+                if self.end_move == 1:
+                    break
+
                 if time.time() - solo_start_time > 300:
                     self.end_move = 1
                     break
                 time.sleep(0.2)
-                self.m_con.motor_go(self.go_speed)
 
-
-                GPIO.output(self.trig, True)
-                time.sleep(0.00001)
-                GPIO.output(self.trig, False)
-
-                while GPIO.input(self.echo) == 0:
-                    pulse_start = time.time()
-
-                while GPIO.input(self.echo) == 1:
-                    pulse_end = time.time()
-
-                pulse_duration = pulse_end - pulse_start
-                distance = pulse_duration * 17000
-                distance = round(distance, 2)
+                distance = self.get_distance()
+                
                 if time.time() - start_t > 1:
                     start_t = time.time()
 
@@ -63,6 +70,7 @@ class move_function(threading.Thread):
                     self.m_con.motor_go(self.go_speed)
 
         except KeyboardInterrupt:
+            self.end_move = 1
             pass
 
         finally:
@@ -79,6 +87,8 @@ class move_function(threading.Thread):
             while True:
                 _, image = camera.read()
                 keValue = cv2.waitKey(1)
+                if self.end_move == 1:
+                    break
                 if time.time() - m_s_time > 300:
                     self.end_move = 1
                     break
@@ -91,7 +101,7 @@ class move_function(threading.Thread):
                 model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
                 output = model.forward()
                 self.m_con.motor_go(self.go_speed)
-                time.sleep(0.2)
+
                 for detection in output[0, 0, :, :]:
                     confidence = detection[2]
                     if confidence > 0.5:
@@ -101,8 +111,12 @@ class move_function(threading.Thread):
                             box_y = detection[4] * image_width
                             box_w = detection[5] * image_width
                             box_h = detection[6] * image_width
-                            print(box_x + (box_w/2), image_width)
-                            if (box_x + box_w)/2 > (image_width/2) * 1.1:
+                            distance = self.get_distance()
+                            if distance < 100:
+                                print('stop')
+                                self.m_con.motor_stop()
+
+                            elif (box_x + box_w)/2 > (image_width/2) * 1.1:
                                 print('right')
                                 self.m_con.motor_left(self.speed)
                             elif (box_x + box_w)/2 < (image_width/2) * 0.9:
@@ -115,6 +129,7 @@ class move_function(threading.Thread):
                             # cv2.imshow('person',imagednn)
                             time.sleep(0.2)
         except Exception as e:
+            self.end_move = 1
             print(e)
 
         finally:
@@ -122,6 +137,9 @@ class move_function(threading.Thread):
 
     def get_is_end(self):
         return self.end_move
+
+    def set_end(self):
+        self.end_move = 1
 
     def run(self):
         if self.is_follow == 0:
