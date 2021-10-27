@@ -163,6 +163,23 @@ class Speaker():
                 elif now.hour in self.call_time['camera_time']:
                     vi = video()
                     vi.start()
+                    check_clicked = button(5, 19)
+                    check_clicked.start()
+                    is_flag = 0
+                    while True:
+                        if is_flag == 0:
+                            if vi.get_is_person() == 1:
+                                self.speak('안녕하세요. 이상이 없으시면 버튼을 눌러주세요.')
+                                is_flag = 1
+
+                        if is_flag == 1:
+                            if check_clicked.get_press() == 1:
+                                self.speak('감사해요. 녹화를 종료할께요.')
+                                check_clicked.reset()
+                                check_clicked.close()
+                                break
+
+
 
             elif now.minute == 50:
                 if str(now.hour) == str(eval(f"{self.call_time['wake_time']}-1")):
@@ -243,11 +260,11 @@ class Speaker():
 
                 if '혼자' in speech:
                     logger.info('play alone move')
-                    self.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 5분간 움직일 수 있어요.')
+                    self.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
                     check_clicked = button(5,19)
                     check_clicked.start()
                     st = time.time()
-                    while time.time() - st < 30:
+                    while time.time() - st < 20:
                         button_state = check_clicked.get_press()
                         if button_state == 1:
                             logger.info('only move button clicked')
@@ -258,6 +275,10 @@ class Speaker():
                         self.speak('네 지금부터 혼자 움직일께요.')
                         mv = move_function(0)
                         mv.start()
+                        while True:
+                            if mv.get_is_end() == 1:
+                                self.speak('이제 다 움직였어요. 다시 충전해주세요.')
+                                break
                     
                     else:
                         self.speak('다음에 이용해주세요.')
@@ -265,7 +286,7 @@ class Speaker():
 
                 if '따라와' in speech:
                     logger.info('play follow function')
-                    self.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 5분간 따라 갈께요.')
+                    self.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 따라 갈께요. 2분간 다른 명령을 들을 수 없어요')
                     check_clicked = button(5,19)
                     check_clicked.start()
                     st = time.time()
@@ -280,6 +301,10 @@ class Speaker():
                         self.speak('네 지금부터 따라 다닐께요.')
                         mv = move_function(1)
                         mv.start()
+                        while True:
+                            if mv.get_is_end() == 1:
+                                self.speak('이제 다 움직였어요. 다시 충전해주세요.')
+                                break
                     
                     else:
                         self.speak('다음에 이용해주세요.')

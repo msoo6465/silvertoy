@@ -55,6 +55,8 @@ class video(threading.Thread):
                 return value
 
     def run(self):
+        self.record_video()
+        self.record = 1
         task1 = threading.Thread(target=self.opencvdnn_thread)
         task1.daemon = True
         task1.start()
@@ -76,9 +78,7 @@ class video(threading.Thread):
                     if confidence > 0.5:
                         class_id = detection[1]
                         class_name = self.id_class_name(class_id, self.classNames)
-                        if class_name == 'person' and self.record == 0 and self.no_more_record == 0:
-                            self.record_video()
-                            self.record = 1
+                        if class_name == 'person' and self.no_more_record == 0:
                             self.is_person = 1
 
     def get_is_person(self):
@@ -86,8 +86,8 @@ class video(threading.Thread):
 
     def main(self):
         try:
+            m_s_time = time.time()
             while True:
-                m_s_time = time.time()
                 _, self.image = self.camera.read()
                 keValue = cv2.waitKey(1)
                 if keValue == ord('q') or keValue == ord('Q'):
@@ -99,15 +99,16 @@ class video(threading.Thread):
                 if self.record == 1:
                     # print('record start')
                     self.video_out.write(self.image)
-                    if time.time() - self.record_start_time > 120:
-                        self.video_out.release()
-                        self.record = 0
-                        self.no_more_record = 1
-                        print('record out')
-                self.main_time = time.time() - m_s_time
+
+                if time.time() - m_s_time > 300:
+                    self.video_out.release()
+                    self.record = 0
+                    self.no_more_record = 1
+                    break
+
                 self.image_ok = 1
                 self.sync_index += 1
-                cv2.imshow('image',self.image)
+                # cv2.imshow('image',self.image)
 
 
         except KeyboardInterrupt:

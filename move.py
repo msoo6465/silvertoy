@@ -13,6 +13,8 @@ class move_function(threading.Thread):
         self.speed = 100
         self.back_speed = 60
 
+        self.move_time = 180
+
         self.trig = 16
         self.echo = 20
 
@@ -48,7 +50,7 @@ class move_function(threading.Thread):
                 if self.end_move == 1:
                     break
 
-                if time.time() - solo_start_time > 300:
+                if time.time() - solo_start_time > self.move_time:
                     self.end_move = 1
                     break
                 time.sleep(0.2)
@@ -87,10 +89,10 @@ class move_function(threading.Thread):
             while True:
                 _, image = camera.read()
                 keValue = cv2.waitKey(1)
-                if self.end_move == 1:
-                    break
-                if time.time() - m_s_time > 300:
+                if time.time() - m_s_time > self.move_time:
                     self.end_move = 1
+                    break
+                if self.end_move == 1:
                     break
                 if keValue == ord('q') or keValue == ord('Q'):
                     break
@@ -125,8 +127,6 @@ class move_function(threading.Thread):
                             else:
                                 print('go')
                                 self.m_con.motor_go(self.go_speed)
-                            # cv2.rectangle(imagednn,(int(box_x),int(box_y)),(int(box_w),int(box_h)),(0,0,255),thickness=1)
-                            # cv2.imshow('person',imagednn)
                             time.sleep(0.2)
         except Exception as e:
             self.end_move = 1
