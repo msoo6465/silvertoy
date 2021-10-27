@@ -27,18 +27,19 @@ class Speaker():
             'drug_time': '',
             'once_time': '',
             'time_count': 3,
-            'camera_time': [11, 15, 19]
+            'camera_time': [10, 14, 18, 22]
         }
-        self.start_speak_list = ['저는 땅콩입니다. 저에게 명령하실 때는 땅콩이라고 불러주신 후 말씀해주세요.',
-                                 '안녕하세요 땅콩이에요.',
-                                 '쨔쟌!!! 땅콩이가 돌아왔어요~',
-                                 '저를 다시 깨워주셔서 감사해요',
-                                 '땅콩이 등장!',
-                                 '저는 어르신의 반려 로봇 땅콩이에요.',
-                                 '다시 만나서 반가워요!',
-                                 '그동안 저 보고싶으셨죠?',
-                                 '저 없는동안 뭐하고 계셨어요?',
-                                 '푹 자서 너무 개운해요! 저를 움직이게 해주세요.']
+        self.myname = '붕붕'
+        self.start_speak_list = [f'저는 {self.myname}입니다. 저에게 명령하실 때는 {self.myname}이라고 불러주신 후 말씀해주세요.',
+                                 f'안녕하세요 {self.myname}이에요.',
+                                 f'쨔쟌!!! {self.myname}이가 돌아왔어요~',
+                                 f'저를 다시 깨워주셔서 감사해요',
+                                 f'{self.myname}이 등장!',
+                                 f'저는 어르신의 반려 로봇 {self.myname}이에요.',
+                                 f'다시 만나서 반가워요!',
+                                 f'그동안 저 보고싶으셨죠?',
+                                 f'저 없는동안 뭐하고 계셨어요?',
+                                 f'푹 자서 너무 개운해요! 저를 움직이게 해주세요.']
 
     def speak(self,text):
         tts = gTTS(text=text, lang='ko')
@@ -161,6 +162,7 @@ class Speaker():
                         if time.time() - alam_start_time > 60:
                             break
                 elif now.hour in self.call_time['camera_time']:
+                    self.speak('녹화를 시작합니다.')
                     vi = video()
                     vi.start()
                     check_clicked = button(5, 19)
@@ -321,7 +323,7 @@ class Speaker():
                     self.play_news()
                     self.function_flag = 0
 
-            if '땅콩' in speech:
+            if self.myname in speech:
                 self.speak('네')
                 self.wait_start_time = time.time()
                 self.function_flag = 1
