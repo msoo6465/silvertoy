@@ -1,6 +1,7 @@
 import RPi.GPIO as GPIO
 import threading
 from move_util import motor_control as mc
+from tts import Speaker
 import time
 import cv2
 
@@ -31,6 +32,49 @@ class self_drive():
             self.camera.set(4, 480)
             self.model = cv2.dnn.readNetFromTensorflow('weight/frozen_inference_graph.pb',
                                                   'weight/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
+    def main(self):
+        self.start_time = time.time()
+        if self.is_follow == 0:
+            self.solo()
+        else:
+            self.follow()
+
+    def solo(self):
+        start_t = time.time()
+        try:
+            solo_start_time = time.time()
+            GPIO.output(self.trig, False)
+            while True:
+                if self.end_move == 1:
+                    break
+
+                if time.time() - solo_start_time > 30:
+                    self.end_move = 1
+                    break
+                time.sleep(0.2)
+
+                distance = self.get_distance()
+
+                if time.time() - start_t > 1:
+                    start_t = time.time()
+
+                if distance <= 20:
+                    self.m_con.motor_back(self.back_speed)
+                    time.sleep(2)
+
+                elif 20 < distance <= 30:
+                    self.m_con.motor_left(self.speed)
+                    time.sleep(0.1)
+
+                else:
+                    self.m_con.motor_go(self.go_speed)
+
+        except KeyboardInterrupt:
+            self.end_move = 1
+            pass
+
+        finally:
+            GPIO.cleanup()
 
     def get_distance(self):
         GPIO.output(self.trig, True)
@@ -56,9 +100,11 @@ class self_drive():
             if not ret:
                 break
 
+            if time.time() - self.start_time > 30:
+                break
+
             if keValue == ord('q') or keValue == ord('Q'):
                 break
-            img = image
             imagednn = image
             image_height, image_width, _ = imagednn.shape
             self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
@@ -97,5 +143,30 @@ class self_drive():
 
 
 if __name__ == '__main__':
-    s = self_drive(1)
-    s.follow()
+    speaker = Speaker()
+    while True:
+        speech = speaker.get_text()
+        speech = speech.replace(' ','')
+        if '빵빵' in speech:
+            speaker.speak('네')
+            break
+
+    while True:
+        speech = speaker.get_text()
+        speech = speech.replace(' ','')
+        if '혼자' in speech:
+            is_follow = 0
+            speaker.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
+            time.sleep(5)
+            speaker.speak('네 지금부터 혼자 움직일께요.')
+            break
+        elif '따라와' in speech:
+            is_follow = 1
+            speaker.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
+            time.sleep(5)
+            speaker.speak('네 지금부터 따라 다닐께요.')
+            break
+
+    s = self_drive(is_follow)
+    s.main()
+    speaker.speak('끝났어요. 충전해 주세요.')
