@@ -18,6 +18,8 @@ class self_drive():
 
         self.trig = 16
         self.echo = 20
+        self.car_state = 'stop'
+        self.image_ok = 0
 
         self.end_move = 0
 
@@ -92,10 +94,50 @@ class self_drive():
         distance = round(distance, 2)
         return distance
 
+    def video_thread(self):
+        while True:
+            if self.image_ok == 1:
+                imagednn = self.image
+                image_height, image_width, _ = imagednn.shape
+                self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
+                output = self.model.forward()
+
+                for detection in output[0, 0, :, :]:
+                    confidence = detection[2]
+                    if confidence > 0.5:
+                        class_id = detection[1]
+                        if class_id == 1:
+                            box_x = detection[3] * image_width
+                            box_w = detection[5] * image_width
+                            distance = self.get_distance()
+                            if distance < 100:
+                                self.car_state = 'stop'
+                            # img = cv2.rectangle(image, (int(box_x), int(box_y)), (int(box_w), int(box_h)), (0, 0, 255), 2)
+                            if (box_x + box_w) / 2 > (image_width / 2) * 1.2:
+                                print('GO')
+                                self.car_state = 'go'
+                                # cv2.putText(img,'RIGHT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            elif (box_x + box_w) / 2 < (image_width / 2) * 0.8:
+                                print('RIGHT')
+                                self.car_state = 'right'
+                                # cv2.putText(img,'LEFT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            else:
+                                print('LEFT')
+                                self.car_state = 'left'
+                                # cv2.putText(img,'GO',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            break
+                self.image_ok = 0
+
+
+
     def follow(self):
+        task = threading.Thread(target=self.video_thread)
+        task.start()
         while True:
             st = time.time()
-            ret, image = self.camera.read()
+            ret, self.image = self.camera.read()
+
+            self.image_ok = 1
             keValue = cv2.waitKey(1)
             if not ret:
                 break
@@ -105,40 +147,21 @@ class self_drive():
 
             if keValue == ord('q') or keValue == ord('Q'):
                 break
-            imagednn = image
-            image_height, image_width, _ = imagednn.shape
-            self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
-            output = self.model.forward()
+
             self.m_con.motor_go(self.go_speed)
 
-            for detection in output[0, 0, :, :]:
-                confidence = detection[2]
-                if confidence > 0.5:
-                    class_id = detection[1]
-                    if class_id == 1:
-                        box_x = detection[3] * image_width
-                        box_w = detection[5] * image_width
-                        distance = self.get_distance()
-                        if distance < 100:
-                            print('stop')
-                            self.m_con.motor_stop()
-                        # img = cv2.rectangle(image, (int(box_x), int(box_y)), (int(box_w), int(box_h)), (0, 0, 255), 2)
-                        if (box_x + box_w) / 2 > (image_width / 2) * 1.2:
-                            print('GO')
-                            # cv2.putText(img,'RIGHT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
-                            self.m_con.motor_left(self.speed)
-                        elif (box_x + box_w) / 2 < (image_width / 2) * 0.8:
-                            print('RIGHT')
-                            # cv2.putText(img,'LEFT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
-                            self.m_con.motor_right(self.speed)
-                        else:
-                            print('LEFT')
-                            # cv2.putText(img,'GO',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
-                            self.m_con.motor_go(self.go_speed)
-                        time.sleep(0.5)
-                        break
-                        # time.sleep(0.2)
-            # cv2.imshow('123',img)
+            if self.car_state == 'go':
+                self.m_con.motor_go(self.go_speed)
+
+            elif self.car_state == 'right':
+                self.m_con.motor_right(self.speed)
+
+            elif self.car_state == 'left':
+                self.m_con.motor_left(self.speed)
+
+            elif self.car_state == 'stop':
+                self.m_con.motor_stop()
+            time.sleep(0.2)
             print(time.time() - st,'sec')
 
 
