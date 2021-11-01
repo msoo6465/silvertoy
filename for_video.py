@@ -50,6 +50,7 @@ class self_drive():
 
     def follow(self):
         while True:
+            st = time.time()
             ret, image = self.camera.read()
             keValue = cv2.waitKey(1)
             if not ret:
@@ -62,7 +63,7 @@ class self_drive():
             image_height, image_width, _ = imagednn.shape
             self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
             output = self.model.forward()
-            self.m_con.motor_go(self.go_speed)
+            # self.m_con.motor_go(self.go_speed)
 
             for detection in output[0, 0, :, :]:
                 confidence = detection[2]
@@ -89,6 +90,7 @@ class self_drive():
                             # self.m_con.motor_go(self.go_speed)
                         # time.sleep(0.2)
             cv2.imshow('123',img)
+            print(time.time() - st,'sec')
 
 
 if __name__ == '__main__':
