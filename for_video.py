@@ -11,7 +11,7 @@ class self_drive():
         self.is_follow = is_follow
         self.m_con = mc(18, 22, 27, 23, 25, 24)
         self.go_speed = 70
-        self.speed = 20
+        self.speed = 40
         self.back_speed = 60
 
         self.move_time = 180
@@ -63,7 +63,7 @@ class self_drive():
                     time.sleep(2)
 
                 elif 20 < distance <= 30:
-                    self.m_con.motor_left(self.speed)
+                    self.m_con.motor_left(80)
                     time.sleep(0.1)
 
                 else:
@@ -146,14 +146,21 @@ if __name__ == '__main__':
     speaker = Speaker()
     while True:
         speech = speaker.get_text()
+        if not speech:
+            continue
         speech = speech.replace(' ','')
+        print(speech)
+        
         if '빵빵' in speech:
             speaker.speak('네')
             break
 
     while True:
         speech = speaker.get_text()
+        if not speech:
+            continue
         speech = speech.replace(' ','')
+        print(speech)
         if '혼자' in speech:
             is_follow = 0
             speaker.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
