@@ -63,7 +63,7 @@ class self_drive():
             image_height, image_width, _ = imagednn.shape
             self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
             output = self.model.forward()
-            # self.m_con.motor_go(self.go_speed)
+            self.m_con.motor_go(self.go_speed)
 
             for detection in output[0, 0, :, :]:
                 confidence = detection[2]
@@ -71,25 +71,28 @@ class self_drive():
                     class_id = detection[1]
                     if class_id == 1:
                         box_x = detection[3] * image_width
-                        box_y = detection[4] * image_width
                         box_w = detection[5] * image_width
-                        box_h = detection[6] * image_width
                         distance = self.get_distance()
                         if distance < 100:
                             print('stop')
                             self.m_con.motor_stop()
-                        img = cv2.rectangle(image, (int(box_x), int(box_y)), (int(box_w), int(box_h)), (0, 0, 255), 2)
+                        # img = cv2.rectangle(image, (int(box_x), int(box_y)), (int(box_w), int(box_h)), (0, 0, 255), 2)
                         if (box_x + box_w) / 2 > (image_width / 2) * 1.2:
-                            cv2.putText(img,'RIGHT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
-                            # self.m_con.motor_left(self.speed)
+                            print('GO')
+                            # cv2.putText(img,'RIGHT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            self.m_con.motor_left(self.speed)
                         elif (box_x + box_w) / 2 < (image_width / 2) * 0.8:
-                            cv2.putText(img,'LEFT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
-                            # self.m_con.motor_right(self.speed)
+                            print('RIGHT')
+                            # cv2.putText(img,'LEFT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            self.m_con.motor_right(self.speed)
                         else:
-                            cv2.putText(img,'GO',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
-                            # self.m_con.motor_go(self.go_speed)
+                            print('LEFT')
+                            # cv2.putText(img,'GO',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            self.m_con.motor_go(self.go_speed)
+                        time.sleep(0.5)
+                        break
                         # time.sleep(0.2)
-            cv2.imshow('123',img)
+            # cv2.imshow('123',img)
             print(time.time() - st,'sec')
 
 
