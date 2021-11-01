@@ -1,3 +1,4 @@
+from typing_extensions import final
 import RPi.GPIO as GPIO
 import threading
 from move_util import motor_control as mc
@@ -96,10 +97,11 @@ class self_drive():
 
     def video_thread(self):
         while True:
+            sttime= time.time()
             if self.image_ok == 1:
                 imagednn = self.image
                 image_height, image_width, _ = imagednn.shape
-                self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
+                self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(150, 150), swapRB=True))
                 output = self.model.forward()
 
                 for detection in output[0, 0, :, :]:
@@ -108,93 +110,112 @@ class self_drive():
                         class_id = detection[1]
                         if class_id == 1:
                             box_x = detection[3] * image_width
+                            box_y = detection[4] * image_height
                             box_w = detection[5] * image_width
+                            box_h = detection[6] * image_height
                             distance = self.get_distance()
                             if distance < 100:
                                 self.car_state = 'stop'
-                            # img = cv2.rectangle(image, (int(box_x), int(box_y)), (int(box_w), int(box_h)), (0, 0, 255), 2)
+                            imagednn = cv2.rectangle(imagednn, (int(box_x), int(box_y)), (int(box_w), int(box_h)), (0, 0, 255), 2)
                             if (box_x + box_w) / 2 > (image_width / 2) * 1.2:
-                                print('GO')
+                                # print('GO')
                                 self.car_state = 'go'
-                                # cv2.putText(img,'RIGHT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                                cv2.putText(imagednn,'RIGHT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+
                             elif (box_x + box_w) / 2 < (image_width / 2) * 0.8:
-                                print('RIGHT')
+                                # print('RIGHT')
                                 self.car_state = 'right'
-                                # cv2.putText(img,'LEFT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                                cv2.putText(imagednn,'LEFT',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
                             else:
-                                print('LEFT')
+                                # print('LEFT')
                                 self.car_state = 'left'
-                                # cv2.putText(img,'GO',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                                cv2.putText(imagednn,'GO',(int(box_x), int(box_y)),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2)
+                            
                             break
+                cv2.imshow('asdf',imagednn)
+                print(time.time() - sttime,'sec')
                 self.image_ok = 0
 
 
 
     def follow(self):
-        task = threading.Thread(target=self.video_thread)
-        task.start()
-        while True:
-            st = time.time()
-            ret, self.image = self.camera.read()
+        try:
+            task = threading.Thread(target=self.video_thread)
+            task.start()
+            self.m_con.motor_stop()
+            while True:
+                st = time.time()
+                ret, self.image = self.camera.read()
 
-            self.image_ok = 1
-            keValue = cv2.waitKey(1)
-            if not ret:
-                break
+                self.image_ok = 1
+                keValue = cv2.waitKey(1)
+                if not ret:
+                    break
 
-            if time.time() - self.start_time > 30:
-                break
+                if time.time() - self.start_time > 30:
+                    break
 
-            if keValue == ord('q') or keValue == ord('Q'):
-                break
+                if keValue == ord('q') or keValue == ord('Q'):
+                    break
 
-            self.m_con.motor_go(self.go_speed)
+                # print(self.car_state)
+                
+                # if self.car_state == 'go':
+                #     self.m_con.motor_go(self.go_speed)
 
-            if self.car_state == 'go':
-                self.m_con.motor_go(self.go_speed)
+                # elif self.car_state == 'right':
+                #     self.m_con.motor_right(self.speed)
 
-            elif self.car_state == 'right':
-                self.m_con.motor_right(self.speed)
+                # elif self.car_state == 'left':
+                #     self.m_con.motor_left(self.speed)
 
-            elif self.car_state == 'left':
-                self.m_con.motor_left(self.speed)
+                # elif self.car_state == 'stop':
+                #     self.m_con.motor_stop()
+                # time.sleep(1)
 
-            elif self.car_state == 'stop':
-                self.m_con.motor_stop()
-            time.sleep(0.2)
-            print(time.time() - st,'sec')
+
+
+        except KeyboardInterrupt:
+            self.end_move = 1
+
+        finally:
+            GPIO.cleanup()
+
+
 
 
 if __name__ == '__main__':
     speaker = Speaker()
     while True:
-        speech = speaker.get_text()
-        if not speech:
-            continue
-        speech = speech.replace(' ','')
-        print(speech)
+        # speech = speaker.get_text()
+        # if not speech:
+        #     continue
+        # speech = speech.replace(' ','')
+        # print(speech)
+        speech = '빵빵'
         
         if '빵빵' in speech:
-            speaker.speak('네')
+            # speaker.speak('네')
             break
 
     while True:
-        speech = speaker.get_text()
-        if not speech:
-            continue
-        speech = speech.replace(' ','')
+        # speech = speaker.get_text()
+        # if not speech:
+        #     continue
+        # speech = speech.replace(' ','')
+        speech = '따라와'
         print(speech)
         if '혼자' in speech:
             is_follow = 0
             speaker.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
-            time.sleep(5)
+            time.sleep(1)
             speaker.speak('네 지금부터 혼자 움직일께요.')
             break
         elif '따라와' in speech:
             is_follow = 1
-            speaker.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
-            time.sleep(5)
-            speaker.speak('네 지금부터 따라 다닐께요.')
+            # speaker.speak('네. 전원을 뽑고 바닥에 두고 버튼을 눌러주세요. 2분간 움직일 수 있어요. 2분 동안 명령을 들을 수 없어요.')
+            # time.sleep(1)
+            # speaker.speak('네 지금부터 따라 다닐께요.')
             break
 
     s = self_drive(is_follow)
