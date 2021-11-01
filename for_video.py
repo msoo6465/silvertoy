@@ -57,6 +57,7 @@ class self_drive():
 
             if keValue == ord('q') or keValue == ord('Q'):
                 break
+            img = image
             imagednn = image
             image_height, image_width, _ = imagednn.shape
             self.model.setInput(cv2.dnn.blobFromImage(imagednn, size=(300, 300), swapRB=True))
